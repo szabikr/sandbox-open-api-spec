@@ -1,0 +1,45 @@
+openapi: 3.1.0
+info:
+  title: Tic Tac Toe
+  summary: OpenAPI Specification Tutorial
+  description: Recreating the Tic Tac Toe API spec after reading the docs
+  version: 1.0.0
+  contact:
+    name: Szabi
+    url: https://szabi.space
+    email: szabikr.dev@gmail.com
+paths:
+  /board:
+    summary: A Path Item Object for Tic Tac Toe Board
+    description: Contains all the Operations that have to do something with the Tic Tac Toe Board
+    get: # Operation Object to get the board state
+      summary: Get the whole board
+      description: Retrieves the current state of the board and the winner
+      operationId: 7c3888c9-26c4-47ac-a875-ac44ac4f67b6
+      #parameters: {} # Parameter Object
+      responses: # Responses Object
+        "200": # Response Object
+          description: Operation completed successfully and you should have the board content
+          content: # Media Type Object
+            application/json:
+              schema: # Schema Object
+                type: object
+                properties:
+                  winner: # Schema Object
+                    type: string
+                    enum: [".", "X", "O"]
+                    description: Winner of the game. `.` means nobody has won yet.
+                  board: # Schema Object
+                    type: array
+                    maxItems: 3
+                    minItems: 3
+                    items: # Schema Object
+                      type: array
+                      maxItems: 3
+                      minItems: 3
+                      items: # Schema Object
+                        type: string
+                        enum: [".", "X", "O"]
+                        description: Possible values for a board square. `.` means empty square.
+
+    #put: {} # Operation Object to change the board state
