@@ -8,12 +8,43 @@ info:
     name: Szabi
     url: https://szabi.space
     email: szabikr.dev@gmail.com
+servers:
+  - url: http://localhost:3030
+    description: dev server
 components:
   schemas:
     coordinate:
       type: integer
       minimum: 1
       maximum: 3
+      example: 1
+      description: One square on the board
+    mark:
+      type: string
+      enum: [".", "X", "O"]
+      description: Possible marks that can go on the board, "." means empty square
+      example: "X"
+    board:
+      type: array
+      maxItems: 3
+      minItems: 3
+      items: # Schema Object
+        type: array
+        maxItems: 3
+        minItems: 3
+        items: # Schema Object
+          $ref: "#/components/schemas/mark"
+    status:
+      type: object
+      properties:
+        winner:
+          $ref: "#/components/schemas/mark"
+        board:
+          $ref: "#/components/schemas/board"
+    errorMessage:
+      type: string
+      maxLength: 512
+      description: A messages that describes an error
   parameters:
     rowParam:
       name: row
@@ -36,68 +67,91 @@ paths:
     get: # Operation Object to get the board state
       summary: Get the whole board
       description: Retrieves the current state of the board and the winner
-      operationId: get_whole_board
+      operationId: get_board
       responses: # Responses Object
         "200": # Response Object
           description: Operation completed successfully and you should have the board content
           content: # Media Type Object
             application/json:
               schema: # Schema Object
-                type: object
-                properties:
-                  winner: # Schema Object
-                    type: string
-                    enum: [".", "X", "O"]
-                    description: Winner of the game. `.` means nobody has won yet.
-                  board: # Schema Object
-                    type: array
-                    maxItems: 3
-                    minItems: 3
-                    items: # Schema Object
-                      type: array
-                      maxItems: 3
-                      minItems: 3
-                      items: # Schema Object
-                        type: string
-                        enum: [".", "X", "O"]
-                        description: Possible values for a board square. `.` means empty square.
+                $ref: "#/components/schemas/status"
+              example:
+                winner: "X"
+                board:
+                  - ["X", "O", "O"]
+                  - ["X", "X", "O"]
+                  - ["0", ".", "X"]
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorMessage"
+              example: "Internal server error, try again later."
   /board/{row}/{column}:
     parameters:
       - $ref: "#/components/parameters/rowParam"
       - $ref: "#/components/parameters/columnParam"
     get:
       summary: Get a single board square
-      operationId: get_board_square
+      operationId: get_square
       responses:
         "200":
           description: Returning the value of a single square successfully
           content:
             application/json:
               schema:
-                type: string
-                enum: [".", "X", "O"]
+                $ref: "#/components/schemas/mark"
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorMessage"
+              example: "Invalid coordinates"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorMessage"
+              example: "Internal server error, try again later."
     put:
       summary: Update a single board square
-      operationId: set_board_square
+      operationId: update_square
       requestBody:
         required: true
+        description: requesting a mark
         content:
           application/json:
             schema:
-              type: string
-              enum: [".", "X", "O"]
+              $ref: "#/components/schemas/mark"
       responses:
         "200":
           description: Square updated successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  row:
-                    $ref: "#/components/schemas/coordinate"
-                  column:
-                    $ref: "#/components/schemas/coordinate"
-                  value:
-                    type: string
-                    enum: [".", "X", "O"]
+                $ref: "#/components/schemas/status"
+              example:
+                winner: "."
+                board:
+                  - [".", ".", "."]
+                  - [".", "X", "."]
+                  - [".", ".", "."]
+        "400":
+          description: Invalid coordinates or mark
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorMessage"
+              examples:
+                invalidCoordinates:
+                  summary: The coordinates provided must represent a square on the board
+                  value: "Invalid Coordinates."
+                notEmpty:
+                  summary: The square must be empty meaning it's not taken by X nor O
+                  value: "Square is not empty."
+                invalidMark:
+                  summary: The game is played only using X and O characters
+                  value: "Invalid Mark, use X or O."
